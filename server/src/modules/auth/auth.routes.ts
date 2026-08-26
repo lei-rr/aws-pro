@@ -4,7 +4,19 @@ import { sessionStore, sessionShow, sessionDelete } from './auth.handlers.js'
 import { sessionStoreSchema } from './auth.schema.js'
 
 export async function routes(app: FastifyInstance) {
-  app.post('/session', { schema: sessionStoreSchema }, sessionStore)
+  app.post(
+    '/session',
+    {
+      schema: sessionStoreSchema,
+      config: {
+        rateLimit: {
+          max: 5,
+          timeWindow: 15 * 60 * 1000,
+        },
+      },
+    },
+    sessionStore
+  )
   app.get('/session', { schema: noRequestSchema }, sessionShow)
   app.delete('/session', { schema: noRequestSchema }, sessionDelete)
 }
