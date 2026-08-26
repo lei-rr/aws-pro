@@ -33,7 +33,9 @@ export function error(
   const mapped = translateError(code, '')
   // Prefer Chinese map; keep vendor detail for AWS failures when present
   let message = mapped || messageOrCode || code
-  if (
+  if (code === 'auth_rate_limited' && messageOrCode && messageOrCode !== mapped && messageOrCode !== code) {
+    message = messageOrCode
+  } else if (
     (code === 'aws_request_failed' || code === 'aws_credentials_invalid') &&
     messageOrCode &&
     messageOrCode !== mapped &&
