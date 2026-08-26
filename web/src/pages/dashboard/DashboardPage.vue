@@ -4,6 +4,7 @@ import { RouterLink } from 'vue-router'
 import { RefreshCw, Server, CreditCard, Activity, KeyRound } from '@lucide/vue'
 import { Button } from '@/shared/ui/button'
 import { Badge } from '@/shared/ui/badge'
+import { Skeleton } from '@/shared/ui/skeleton'
 import { TableLoading } from '@/shared/ui/table'
 import { PageHeader } from '@/shared/ui/page-header'
 import { loadAccounts, useAccountStore } from '@/features/accounts'
@@ -94,54 +95,71 @@ onMounted(() => runLoad())
 </script>
 
 <template>
-  <div class="flex flex-1 flex-col gap-5">
+  <div class="flex flex-1 flex-col gap-6">
     <PageHeader title="控制台" description="查看 AWS 账号、实例和区域资源概览。">
-      <Button variant="outline" size="sm" :disabled="loading" @click="onRefresh">
+      <Button variant="outline" size="sm" :disabled="loading" class="cursor-pointer" @click="onRefresh">
         <RefreshCw class="size-4" :class="refreshing && 'animate-spin'" />
         刷新
       </Button>
-      <Button size="sm" as-child>
+      <Button size="sm" as-child class="cursor-pointer">
         <RouterLink to="/accounts">账号管理</RouterLink>
       </Button>
     </PageHeader>
 
-    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      <div v-for="item in stats" :key="item.label" class="bg-muted/40 rounded-lg px-3 py-3">
-        <div class="text-muted-foreground flex items-center gap-1.5 text-xs">
-          <component :is="item.icon" class="size-3.5" />
+    <!-- 骨架屏：统计指标 -->
+    <div v-if="loading && !instances.length" class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div v-for="i in 4" :key="i" class="bg-muted/40 rounded-xl px-4 py-3 space-y-1.5">
+        <Skeleton class="h-3 w-14" />
+        <Skeleton class="h-7 w-10" />
+      </div>
+    </div>
+
+    <!-- 真实数据：统计指标（大气柔和质感） -->
+    <div v-else class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div
+        v-for="item in stats"
+        :key="item.label"
+        class="bg-muted/40 hover:bg-muted/60 transition-colors rounded-xl px-4 py-3"
+      >
+        <div class="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
+          <component :is="item.icon" class="size-3.5 text-muted-foreground/80" />
           {{ item.label }}
         </div>
-        <div class="mt-1 text-xl font-semibold tabular-nums">{{ item.value }}</div>
+        <div class="mt-1 text-2xl font-bold tracking-tight tabular-nums text-foreground">{{ item.value }}</div>
         <div class="text-muted-foreground mt-0.5 text-xs">{{ item.desc }}</div>
       </div>
     </div>
 
     <TableLoading :loading="loading" :refreshing="refreshing" :empty="!accountRegionSummary.length">
       <div>
-        <div class="mb-3">
-          <h2 class="text-base font-semibold">账号与区域资源分布</h2>
-          <p class="text-muted-foreground text-sm">按账号汇总区域数量，并展示每个区域的实例分布。</p>
+        <div class="mb-3 space-y-0.5">
+          <h2 class="text-base font-semibold tracking-tight">账号与区域资源分布</h2>
+          <p class="text-muted-foreground text-xs">按账号汇总区域数量，并展示每个区域的实例分布。</p>
         </div>
-        <div v-if="!accountRegionSummary.length" class="text-muted-foreground py-10 text-center text-sm">
+        <div v-if="!accountRegionSummary.length && !loading" class="text-muted-foreground py-10 text-center text-sm">
           暂无账号区域资源
         </div>
         <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <div v-for="record in accountRegionSummary" :key="record.key" class="bg-muted/30 rounded-lg px-3 py-3">
-            <div class="mb-2 flex items-center justify-between gap-2">
-              <div class="truncate font-medium">{{ record.accountId }}</div>
-              <Badge variant="secondary">{{ record.total }} 台</Badge>
+          <div
+            v-for="record in accountRegionSummary"
+            :key="record.key"
+            class="bg-muted/30 hover:bg-muted/50 transition-colors rounded-2xl border border-border/40 p-4"
+          >
+            <div class="mb-2.5 flex items-center justify-between gap-2">
+              <div class="truncate font-semibold tracking-tight">{{ record.accountId }}</div>
+              <Badge variant="secondary" class="font-normal">{{ record.total }} 台</Badge>
             </div>
             <div v-if="record.regions.length" class="space-y-1.5">
               <div
                 v-for="region in record.regions"
                 :key="region.key"
-                class="flex items-center justify-between gap-2 text-sm"
+                class="flex items-center justify-between gap-2 text-xs"
               >
                 <span class="text-muted-foreground truncate">{{ region.label }}</span>
-                <span class="tabular-nums">{{ region.total }} 台</span>
+                <span class="tabular-nums font-medium">{{ region.total }} 台</span>
               </div>
             </div>
-            <div v-else class="text-muted-foreground text-sm">暂无区域</div>
+            <div v-else class="text-muted-foreground text-xs">暂无区域</div>
           </div>
         </div>
       </div>
